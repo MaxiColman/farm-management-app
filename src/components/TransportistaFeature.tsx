@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,13 +25,21 @@ export default function TransportistaComponent() {
     empresa: ''
   })
 
+  const isInitialMount = useRef(true)
+
+  // Cargar transportistas de localStorage cuando el componente se monta
   useEffect(() => {
     const loadedTransportistas = JSON.parse(localStorage.getItem('transportistas') || '[]')
     setTransportistas(loadedTransportistas)
   }, [])
 
+  // Guardar transportistas en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
-    localStorage.setItem('transportistas', JSON.stringify(transportistas))
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+    } else {
+      localStorage.setItem('transportistas', JSON.stringify(transportistas))
+    }
   }, [transportistas])
 
   useEffect(() => {

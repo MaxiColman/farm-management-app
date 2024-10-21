@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -36,6 +36,9 @@ export default function TransaccionesComponent() {
     nombreComprador: ''
   })
 
+  const isInitialMount = useRef(true)
+
+  // Cargar proveedores y transacciones de localStorage cuando el componente se monta
   useEffect(() => {
     const loadedProveedores = JSON.parse(localStorage.getItem('proveedores') || '[]')
     const loadedTransacciones = JSON.parse(localStorage.getItem('transacciones') || '[]')
@@ -43,8 +46,13 @@ export default function TransaccionesComponent() {
     setTransacciones(loadedTransacciones)
   }, [])
 
+  // Guardar transacciones en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
-    localStorage.setItem('transacciones', JSON.stringify(transacciones))
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+    } else {
+      localStorage.setItem('transacciones', JSON.stringify(transacciones))
+    }
   }, [transacciones])
 
   useEffect(() => {

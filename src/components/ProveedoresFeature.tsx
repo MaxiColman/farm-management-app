@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,13 +32,23 @@ export default function ProveedoresComponent() {
     tipo: ''
   })
 
+  const isInitialMount = useRef(true)
+
+  // Cargar proveedores de localStorage cuando el componente se monta
   useEffect(() => {
     const loadedProveedores = JSON.parse(localStorage.getItem('proveedores') || '[]')
-    setProveedores(loadedProveedores)
+    if (loadedProveedores.length > 0) {
+      setProveedores(loadedProveedores)
+    }
   }, [])
 
+  // Guardar proveedores en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
-    localStorage.setItem('proveedores', JSON.stringify(proveedores))
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+    } else {
+      localStorage.setItem('proveedores', JSON.stringify(proveedores))
+    }
   }, [proveedores])
 
   useEffect(() => {

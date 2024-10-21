@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,14 +33,25 @@ export default function ChacraComponent() {
     polizas: ''
   })
 
+  const isInitialMount = useRef(true)
+
+  // Cargar chacras de localStorage cuando el componente se monta
   useEffect(() => {
-    const loadedChacras = JSON.parse(localStorage.getItem('chacras') || '[]')
-    setChacras(loadedChacras)
+    const storedChacras = JSON.parse(localStorage.getItem('chacras') || '[]')
+    if (storedChacras.length > 0) {
+      setChacras(storedChacras)
+    }
   }, [])
 
+  // Guardar chacras en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
-    localStorage.setItem('chacras', JSON.stringify(chacras))
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+    } else {
+      localStorage.setItem('chacras', JSON.stringify(chacras))
+    }
   }, [chacras])
+  
 
   useEffect(() => {
     const results = chacras.filter(chacra =>

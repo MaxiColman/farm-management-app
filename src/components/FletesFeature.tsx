@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,15 +37,24 @@ export default function FletesComponent() {
     transportistaId: 0
   })
 
+  const isInitialMountFletes = useRef(true)
+
+  // Cargar fletes y transportistas de localStorage cuando el componente se monta
   useEffect(() => {
     const loadedFletes = JSON.parse(localStorage.getItem('fletes') || '[]')
     const loadedTransportistas = JSON.parse(localStorage.getItem('transportistas') || '[]')
+
     setFletes(loadedFletes)
     setTransportistas(loadedTransportistas)
   }, [])
 
+  // Guardar fletes en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
-    localStorage.setItem('fletes', JSON.stringify(fletes))
+    if (isInitialMountFletes.current) {
+      isInitialMountFletes.current = false
+    } else {
+      localStorage.setItem('fletes', JSON.stringify(fletes))
+    }
   }, [fletes])
 
   useEffect(() => {

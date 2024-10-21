@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -64,6 +64,9 @@ export default function ZafraComponent() {
     cuerpoExtrano: 0
   })
 
+  const isInitialMount = useRef(true)
+
+  // Cargar zafras y otras entidades de localStorage cuando el componente se monta
   useEffect(() => {
     const loadedZafras = JSON.parse(localStorage.getItem('zafras') || '[]')
     const loadedChacras = JSON.parse(localStorage.getItem('chacras') || '[]')
@@ -76,8 +79,13 @@ export default function ZafraComponent() {
     setTransportistas(loadedTransportistas)
   }, [])
 
+  // Guardar zafras en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
-    localStorage.setItem('zafras', JSON.stringify(zafras))
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+    } else {
+      localStorage.setItem('zafras', JSON.stringify(zafras))
+    }
   }, [zafras])
 
   useEffect(() => {
