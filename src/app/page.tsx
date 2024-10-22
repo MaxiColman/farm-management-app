@@ -34,7 +34,7 @@ export default function FarmManagementApp() {
       {/* Navigation sidebar */}
       <nav className="w-full md:w-64 bg-white shadow-md">
         <div className="p-4">
-          <h2 className="text-2xl font-bold mb-4">Farm Management App</h2>
+          <h2 className="text-2xl font-bold mb-4">Federico Kleist</h2>
           <ul>
             {navItems.map((item) => (
               <li key={item.name} className="mb-2">
