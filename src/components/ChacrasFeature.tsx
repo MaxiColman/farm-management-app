@@ -35,6 +35,7 @@ export default function ChacraComponent() {
 
   const isInitialMount = useRef(true)
 
+  // Cargar chacras de localStorage cuando el componente se monta
   useEffect(() => {
     const storedChacras = JSON.parse(localStorage.getItem('chacras') || '[]')
     if (storedChacras.length > 0) {
@@ -42,6 +43,7 @@ export default function ChacraComponent() {
     }
   }, [])
 
+  // Guardar chacras en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
@@ -49,6 +51,7 @@ export default function ChacraComponent() {
       localStorage.setItem('chacras', JSON.stringify(chacras))
     }
   }, [chacras])
+  
 
   useEffect(() => {
     const results = chacras.filter(chacra =>
@@ -106,7 +109,7 @@ export default function ChacraComponent() {
     })
   }
 
-  const printData = (data: Chacra[], title: string) => {
+  const printData = (data: any[], title: string) => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write('<html><head><title>' + title + '</title>');
@@ -120,7 +123,7 @@ export default function ChacraComponent() {
       
       // Write table header
       printWindow.document.write('<tr>');
-      for (const key in data[0]) {
+      for (let key in data[0]) {
         if (key !== 'id') {
           printWindow.document.write('<th>' + key + '</th>');
         }
@@ -130,9 +133,9 @@ export default function ChacraComponent() {
       // Write table body
       data.forEach((item) => {
         printWindow.document.write('<tr>');
-        for (const key in item) {
+        for (let key in item) {
           if (key !== 'id') {
-            printWindow.document.write('<td>' + item[key as keyof Chacra] + '</td>');
+            printWindow.document.write('<td>' + item[key] + '</td>');
           }
         }
         printWindow.document.write('</tr>');

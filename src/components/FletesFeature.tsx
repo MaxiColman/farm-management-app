@@ -39,6 +39,7 @@ export default function FletesComponent() {
 
   const isInitialMountFletes = useRef(true)
 
+  // Cargar fletes y transportistas de localStorage cuando el componente se monta
   useEffect(() => {
     const loadedFletes = JSON.parse(localStorage.getItem('fletes') || '[]')
     const loadedTransportistas = JSON.parse(localStorage.getItem('transportistas') || '[]')
@@ -47,6 +48,7 @@ export default function FletesComponent() {
     setTransportistas(loadedTransportistas)
   }, [])
 
+  // Guardar fletes en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
     if (isInitialMountFletes.current) {
       isInitialMountFletes.current = false
@@ -121,7 +123,7 @@ export default function FletesComponent() {
     return totales.filter(t => t.totalKmRecorridos > 0)
   }
 
-  const printData = (data: Flete[] | ReturnType<typeof calcularTotalFletes>, title: string) => {
+  const printData = (data: any[], title: string) => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write('<html><head><title>' + title + '</title>');
@@ -135,7 +137,7 @@ export default function FletesComponent() {
       
       // Write table header
       printWindow.document.write('<tr>');
-      for (const key in data[0]) {
+      for (let key in data[0]) {
         if (key !== 'id') {
           printWindow.document.write('<th>' + key + '</th>');
         }
@@ -145,9 +147,9 @@ export default function FletesComponent() {
       // Write table body
       data.forEach((item) => {
         printWindow.document.write('<tr>');
-        for (const key in item) {
+        for (let key in item) {
           if (key !== 'id') {
-            printWindow.document.write('<td>' + item[key as keyof typeof item] + '</td>');
+            printWindow.document.write('<td>' + item[key] + '</td>');
           }
         }
         printWindow.document.write('</tr>');
