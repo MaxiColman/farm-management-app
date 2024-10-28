@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Printer } from 'lucide-react'
+import { Printer, Search } from 'lucide-react'
 
 interface Zafra {
   id: number
@@ -45,10 +45,7 @@ export default function ZafraComponent() {
   const [chacras, setChacras] = useState<Chacra[]>([])
   const [proveedores, setProveedores] = useState<Proveedor[]>([])
   const [transportistas, setTransportistas] = useState<Transportista[]>([])
-  const [selectedProveedorId, setSelectedProveedorId] = useState<string | null>(null)
-  const [selectedTransportistaId, setSelectedTransportistaId] = useState<string | null>(null)
-  const [selectedChacraId, setSelectedChacraId] = useState<string | null>(null)
-  const [selectedProducto, setSelectedProducto] = useState<string>('all')
+  const [searchTerm, setSearchTerm] = useState('')
   const [zafraFormData, setZafraFormData] = useState<Omit<Zafra, 'id'>>({
     chacraId: 0,
     proveedorId: 0,
@@ -90,17 +87,22 @@ export default function ZafraComponent() {
 
   useEffect(() => {
     const results = zafras.filter(zafra =>
-      (selectedProveedorId === null || selectedProveedorId === 'all' || zafra.proveedorId === Number(selectedProveedorId)) &&
-      (selectedTransportistaId === null || selectedTransportistaId === 'all' || zafra.transportistaId === Number(selectedTransportistaId)) &&
-      (selectedChacraId === null || selectedChacraId === 'all' || zafra.chacraId === Number(selectedChacraId)) &&
-      (selectedProducto === 'all' || zafra.producto === selectedProducto)
+      zafra.producto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      chacras.find(c => c.id === zafra.chacraId)?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      proveedores.find(p => p.id === zafra.proveedorId)?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transportistas.find(t => t.id === zafra.transportistaId)?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
     )
     setFilteredZafras(results)
-  }, [zafras, selectedProveedorId, selectedTransportistaId, selectedChacraId, selectedProducto])
+  }, [zafras, searchTerm, chacras, proveedores, transportistas])
 
   const handleZafraInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setZafraFormData(prev => ({ ...prev, [name]: name === 'producto' ? value : parseFloat(value) }))
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Filtering is already done in useEffect
   }
 
   const addZafra = () => {
@@ -332,6 +334,7 @@ export default function ZafraComponent() {
             placeholder="Ej: 1.2"
             aria-label="Porcentaje de cuerpo extraño"
           />
+        
         </div>
         <Button type="submit" className="md:col-span-2 w-full">
           Agregar Zafra
@@ -339,52 +342,20 @@ export default function ZafraComponent() {
       </form>
 
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-        <div className="flex flex-col  md:flex-row gap-2 w-full md:w-auto mb-2 md:mb-0">
-          <Select onValueChange={(value) => setSelectedProveedorId(value)}>
-            <SelectTrigger aria-label="Filtrar por Proveedor">
-              <SelectValue placeholder="Filtrar por Proveedor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los Proveedores</SelectItem>
-              {proveedores.map(proveedor => (
-                <SelectItem key={proveedor.id} value={proveedor.id.toString()}>{proveedor.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select onValueChange={(value) => setSelectedTransportistaId(value)}>
-            <SelectTrigger aria-label="Filtrar por Transportista">
-              <SelectValue placeholder="Filtrar por Transportista" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los Transportistas</SelectItem>
-              {transportistas.map(transportista => (
-                <SelectItem key={transportista.id} value={transportista.id.toString()}>{transportista.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select onValueChange={(value) => setSelectedChacraId(value)}>
-            <SelectTrigger aria-label="Filtrar por Chacra">
-              <SelectValue placeholder="Filtrar por Chacra" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las Chacras</SelectItem>
-              {chacras.map(chacra => (
-                <SelectItem key={chacra.id} value={chacra.id.toString()}>{chacra.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select onValueChange={(value) => setSelectedProducto(value)}>
-            <SelectTrigger aria-label="Filtrar por Producto">
-              <SelectValue placeholder="Filtrar por Producto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los Productos</SelectItem>
-              {Array.from(new Set(zafras.map(zafra => zafra.producto))).map(producto => (
-                <SelectItem key={producto} value={producto}>{producto}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-2 w-full md:w-auto mb-2 md:mb-0">
+          <Input
+            type="text"
+            placeholder="Buscar por producto, chacra, proveedor o transportista..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-grow"
+            aria-label="Buscar zafras"
+          />
+          <Button type="submit" className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto">
+            <Search className="h-4 w-4 mr-2" />
+            Buscar
+          </Button>
+        </form>
         <Button onClick={() => printData(filteredZafras, 'Zafras')} className="bg-green-500 hover:bg-green-600 w-full md:w-auto">
           <Printer className="h-4 w-4 mr-2" />
           Imprimir

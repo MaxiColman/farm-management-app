@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, Printer } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface Proveedor {
   id: number
@@ -20,6 +21,9 @@ interface Transaccion {
   creditos: number
   descripcion: string
   nombreComprador: string
+  tieneIVA: boolean
+  montoIVA: number
+  total: number
 }
 
 export default function TransaccionesComponent() {
@@ -28,17 +32,18 @@ export default function TransaccionesComponent() {
   const [filteredTransacciones, setFilteredTransacciones] = useState<Transaccion[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedProveedorId, setSelectedProveedorId] = useState<string | null>(null)
-  const [transaccionFormData, setTransaccionFormData] = useState<Omit<Transaccion, 'id' | 'proveedorId' | 'proveedorNombre'>>({
+  const [transaccionFormData, setTransaccionFormData] = useState<Omit<Transaccion, 'id' | 'proveedorId' | 'proveedorNombre' | 'montoIVA' | 'total'>>({
     fecha: '',
     pagos: 0,
     creditos: 0,
     descripcion: '',
-    nombreComprador: ''
+    nombreComprador: '',
+    tieneIVA: false
   })
 
   const isInitialMount = useRef(true)
 
-  // Cargar proveedores y transacciones de localStorage cuando el componente se monta
+  // Load providers and transactions from localStorage when the component mounts
   useEffect(() => {
     const loadedProveedores = JSON.parse(localStorage.getItem('proveedores') || '[]')
     const loadedTransacciones = JSON.parse(localStorage.getItem('transacciones') || '[]')
@@ -46,7 +51,7 @@ export default function TransaccionesComponent() {
     setTransacciones(loadedTransacciones)
   }, [])
 
-  // Guardar transacciones en localStorage cuando cambian, pero omitir el primer renderizado
+  // Save transactions to localStorage when they change, but skip the first render
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
@@ -66,7 +71,11 @@ export default function TransaccionesComponent() {
 
   const handleTransaccionInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setTransaccionFormData(prev => ({ ...prev, [name]: name === 'pagos' || name === 'creditos' ?   parseFloat(value) : value }))
+    setTransaccionFormData(prev => ({ ...prev, [name]: name === 'pagos' || name === 'creditos' ? parseFloat(value) : value }))
+  }
+
+  const handleIVAChange = (checked: boolean) => {
+    setTransaccionFormData(prev => ({ ...prev, tieneIVA: checked }))
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -78,11 +87,16 @@ export default function TransaccionesComponent() {
     if (selectedProveedorId !== null) {
       const proveedor = proveedores.find(p => p.id === Number(selectedProveedorId))
       if (proveedor) {
+        const montoBase = transaccionFormData.creditos - transaccionFormData.pagos
+        const montoIVA = transaccionFormData.tieneIVA ? montoBase * 0.22 : 0
+        const total = montoBase + montoIVA
         const newTransaccion = {
           ...transaccionFormData,
           id: Date.now(),
           proveedorId: Number(selectedProveedorId),
-          proveedorNombre: proveedor.nombre
+          proveedorNombre: proveedor.nombre,
+          montoIVA,
+          total
         }
         setTransacciones([...transacciones, newTransaccion])
         resetTransaccionForm()
@@ -100,7 +114,8 @@ export default function TransaccionesComponent() {
       pagos: 0,
       creditos: 0,
       descripcion: '',
-      nombreComprador: ''
+      nombreComprador: '',
+      tieneIVA: false
     })
     setSelectedProveedorId(null)
   }
@@ -110,15 +125,18 @@ export default function TransaccionesComponent() {
       const transaccionesProveedor = transacciones.filter(t => t.proveedorId === proveedor.id)
       const totalPagos = transaccionesProveedor.reduce((sum, t) => sum + t.pagos, 0)
       const totalCreditos = transaccionesProveedor.reduce((sum, t) => sum + t.creditos, 0)
+      const totalIVA = transaccionesProveedor.reduce((sum, t) => sum + t.montoIVA, 0)
+      const balance = totalCreditos - totalPagos + totalIVA
       return {
         proveedorId: proveedor.id,
         proveedorNombre: proveedor.nombre,
         totalPagos,
         totalCreditos,
-        balance: totalCreditos - totalPagos
+        totalIVA,
+        balance
       }
     })
-    return totales.filter(t => t.totalPagos > 0 || t.totalCreditos > 0)
+    return totales.filter(t => t.totalPagos > 0 || t.totalCreditos > 0 || t.totalIVA > 0)
   }
 
   const printData = (data: any[], title: string) => {
@@ -188,7 +206,7 @@ export default function TransaccionesComponent() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="pagos">Pagos (monto en pesos uruguayos)</Label>
+          <Label htmlFor="pagos">Pagos (monto en U$ o $)</Label>
           <Input
             id="pagos"
             name="pagos"
@@ -200,7 +218,7 @@ export default function TransaccionesComponent() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="creditos">Créditos (monto en pesos uruguayos)</Label>
+          <Label htmlFor="creditos">Créditos (monto en U$ o $)</Label>
           <Input
             id="creditos"
             name="creditos"
@@ -232,6 +250,16 @@ export default function TransaccionesComponent() {
             placeholder="Ej: María González"
             aria-label="Nombre del Comprador"
           />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="tieneIVA"
+              checked={transaccionFormData.tieneIVA}
+              onCheckedChange={handleIVAChange}
+            />
+            <Label htmlFor="tieneIVA">Tiene IVA (22%)</Label>
+          </div>
         </div>
         <Button type="submit" className="md:col-span-2 w-full">
           Agregar Transacción
@@ -267,6 +295,8 @@ export default function TransaccionesComponent() {
               <TableHead>Fecha</TableHead>
               <TableHead>Pagos</TableHead>
               <TableHead>Créditos</TableHead>
+              <TableHead>IVA</TableHead>
+              <TableHead>Total</TableHead>
               <TableHead>Descripción</TableHead>
               <TableHead>Nombre del Comprador</TableHead>
               <TableHead>Acciones</TableHead>
@@ -279,6 +309,8 @@ export default function TransaccionesComponent() {
                 <TableCell>{transaccion.fecha}</TableCell>
                 <TableCell>{transaccion.pagos}</TableCell>
                 <TableCell>{transaccion.creditos}</TableCell>
+                <TableCell>{transaccion.montoIVA.toFixed(2)}</TableCell>
+                <TableCell>{transaccion.total.toFixed(2)}</TableCell>
                 <TableCell>{transaccion.descripcion}</TableCell>
                 <TableCell>{transaccion.nombreComprador}</TableCell>
                 <TableCell>
@@ -304,8 +336,10 @@ export default function TransaccionesComponent() {
           <TableHeader>
             <TableRow>
               <TableHead>Proveedor</TableHead>
+              
               <TableHead>Total Pagos</TableHead>
               <TableHead>Total Créditos</TableHead>
+              <TableHead>Total IVA</TableHead>
               <TableHead>Balance</TableHead>
             </TableRow>
           </TableHeader>
@@ -313,9 +347,10 @@ export default function TransaccionesComponent() {
             {calcularTotalTransacciones().map(total => (
               <TableRow key={total.proveedorId}>
                 <TableCell>{total.proveedorNombre}</TableCell>
-                <TableCell>{total.totalPagos}</TableCell>
-                <TableCell>{total.totalCreditos}</TableCell>
-                <TableCell>{total.balance}</TableCell>
+                <TableCell>{total.totalPagos.toFixed(2)}</TableCell>
+                <TableCell>{total.totalCreditos.toFixed(2)}</TableCell>
+                <TableCell>{total.totalIVA.toFixed(2)}</TableCell>
+                <TableCell>{total.balance.toFixed(2)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
