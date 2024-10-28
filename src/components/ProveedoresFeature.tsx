@@ -34,7 +34,6 @@ export default function ProveedoresComponent() {
 
   const isInitialMount = useRef(true)
 
-  // Cargar proveedores de localStorage cuando el componente se monta
   useEffect(() => {
     const loadedProveedores = JSON.parse(localStorage.getItem('proveedores') || '[]')
     if (loadedProveedores.length > 0) {
@@ -42,7 +41,6 @@ export default function ProveedoresComponent() {
     }
   }, [])
 
-  // Guardar proveedores en localStorage cuando cambian, pero omitir el primer renderizado
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
@@ -110,7 +108,7 @@ export default function ProveedoresComponent() {
     })
   }
 
-  const printData = (data: any[], title: string) => {
+  const printData = (data: Proveedor[], title: string) => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write('<html><head><title>' + title + '</title>');
@@ -124,7 +122,7 @@ export default function ProveedoresComponent() {
       
       // Write table header
       printWindow.document.write('<tr>');
-      for (let key in data[0]) {
+      for (const key in data[0]) {
         if (key !== 'id') {
           printWindow.document.write('<th>' + key + '</th>');
         }
@@ -134,9 +132,9 @@ export default function ProveedoresComponent() {
       // Write table body
       data.forEach((item) => {
         printWindow.document.write('<tr>');
-        for (let key in item) {
+        for (const key in item) {
           if (key !== 'id') {
-            printWindow.document.write('<td>' + item[key] + '</td>');
+            printWindow.document.write('<td>' + item[key as keyof Proveedor] + '</td>');
           }
         }
         printWindow.document.write('</tr>');
